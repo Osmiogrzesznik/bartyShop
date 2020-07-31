@@ -1,0 +1,53 @@
+// {
+//   "orders": [
+//     {
+//       "__comment": "order id is the order number and pseudo user id",
+//       "id": 1,
+//       "product_id": 0,
+//       "client": {
+//         "name": "examplian",
+//         "surname": "examplski",
+//         "deliveryAddress": {
+//           "mieszkanie": 10,
+//           "brama": 10,
+//           "ulica": "bubu avenue"
+//         },
+//         "billingAddress": {
+//           "name_on_card": "examplian examplinski",
+//           "mieszkanie": 10,
+//           "brama": 10,
+//           "ulica": "bubu avenue"
+//         }
+//       }
+//     }
+//   ],
+//   "products": [
+//     {
+//       "id": 0,
+//       "name": "szczotka",
+//       "description": "Szczotka czysci, Szczotka czysci, Szczotka czysci, Szczotka czysci, Szczotka czysci, Szczotka czysci, Szczotka czysci, Szczotka czysci, Szczotka czysci, Szczotka czysci,  ",
+//       "cost": 599,
+//       "onStock": 1,
+//       "img": ["images/szczotka1.jpg", "images/szczotka2.jpg"],
+//       "linkToVideo": "https://www.youtube.com/watch?v=4N5eCg6YAZk"
+//     },
+//     {
+//       "id": 1,
+//       "name": "suszarka",
+//       "onStock": 2,
+//       "description": "suszarka suszy . suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy ",
+//       "cost": 2099,
+//       "img": ["images/suszarka1.jpg", "images/suszarka2.jpg"],
+//       "linkToVideo": "https://www.youtube.com/watch?v=SQoe8lpyGLs"
+//     },
+//     {
+//       "id": 2,
+//       "name": "opona",
+//       "onStock": 4,
+//       "description": "suszarka suszy . suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy suszarka suszy ",
+//       "cost": 1999,
+//       "img": ["images/kolo1.jpg", "images/kolo2.jpg"],
+//       "linkToVideo": "https://www.youtube.com/watch?v=wRL3BrUE08Q"
+//     }
+//   ]
+// }

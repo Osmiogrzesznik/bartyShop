@@ -1,0 +1,993 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>sklep proj</title>
+
+</head>
+<!-- <script defer src="/__/firebase/7.7.0/firebase-app.js"></script> -->
+<!-- include only the Firebase features as you need -->
+<!-- <script defer src="/__/firebase/7.7.0/firebase-auth.js"></script> -->
+<!-- <script defer src="/__/firebase/7.7.0/firebase-database.js"></script> -->
+<!-- <script defer src="/__/firebase/7.7.0/firebase-messaging.js"></script> -->
+<!-- <script defer src="/__/firebase/7.7.0/firebase-storage.js"></script>  -->
+<!-- initialize the SDK after all desired features are loaded -->
+<!-- <script defer src="/__/firebase/init.js"></script> -->
+
+<script src="vue.js"></script>
+<script src="firebaseMock.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vuefire/2.2.1/vuefire.js"
+    integrity="sha256-B4XqB3RtUc1NKAxl8f+wUx/+O4yfa08E9m/4B3H044Q=" crossorigin="anonymous"></script> -->
+
+<!-- <script src="https://www.gstatic.com/firebasejs/ui/4.3.0/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.3.0/firebase-ui-auth.css" /> -->
+</head>
+<!-- The surrounding HTML is left untouched by FirebaseUI.
+         Your app may use that space for branding, controls and other customizations.-->
+
+<body>
+    <pre id="products_pre" data-type="json">
+
+      </pre>
+    <pre id="old_products_pre" data-type="json">
+      </pre>
+    <div id="app">
+
+        <div class="alert2msg" v-if="usesFirebase"> <button class="okragly" @click.stop="signOut">Log out</button>
+            {{ alert2msg }}
+            {{ module }}</div>
+
+
+        <div v-if="!loggedin && usesFirebase">
+            <div id="login-form-wrap">
+                <h2>Login</h2>
+
+                <div id="login-form">
+
+                    <p>
+                        <input type="email" id="email" name="email" placeholder="Email Address" v-model="em" required><i
+                            class="validation"><span></span><span></span></i>
+                    </p>
+                    <p>
+                        <input type="password" id="password" name="password" placeholder="password" v-model="pass"
+                            required><i class="validation"><span></span><span></span></i>
+                    </p>
+                    <p>
+                        {{ err }}
+                        <input v-if="!canLogin" type="submit" id="login3" value="Login" style="opacity: 0.2;">
+                        <input v-if="canLogin" type="submit" id="login" value="Login" @click="login">
+
+                    </p>
+                </div>
+                <div id="create-account-wrap">
+                    <p>Not a member? <a href="#">Sorry, You have to enter you order number to access the
+                            information.</a>
+                        <p>
+                </div>
+                <!--create-account-wrap-->
+            </div>
+            <!--login-form-wrap-->
+
+        </div>
+        <h1 @click="selectGroup(products)">{{ module }} module groups:</h1>
+        <div class="row" @click="selectGroup(products)">
+
+            <fieldset>
+                This module allows for <input maxlength="2" class="s" v-model="minPerGroup" /> to <input maxlength="2"
+                    class="s" v-model="maxPerGroup" /> products per group. Currently there are
+                {{ groups.length }}
+                groups.
+                <div class="row multirow">
+                    <button class="okragly" @click.stop="addGroup">Add Group</button>
+                    <button class="okragly" @click.stop="removeGroup">Remove Group</button>
+
+                    <button class="okragly" @click.stop="saveToDB">SAVE CHANGES</button>
+                    <button class="okragly" @click.stop="saveToTEXT">SAVE as Text</button>
+
+                    <button class="okragly" @click.stop="saveToJSON">SAVE as JSON</button>
+                    <button class="okragly">Load from TEXT
+                        <input type="file" id="f1" @change="loadStringFromFile($event,loadFromTEXT)" />
+                    </button>
+                    <button class="okragly">Load from JSON
+                        <input type="file" id="f2" @change="loadStringFromFile($event,loadFromJSON)" />
+                    </button>
+                </div>
+            </fieldset>
+            <br>
+        </div>
+        <div class="row" @click="selectGroup(products)">
+            {{ totalproducts }} products in total. Last Edited : {{ lastEdited }}
+            <br>
+        </div>
+        <div class="row worktop" @click="selectGroup(products)">
+            <div class="bubu" :class="{active : selectedGroup.id === -1}" @click="selectGroup(products)">
+
+                {{ products.arr && products.arr.length }} unassigned products
+
+                <li v-for="product in products.arr" :key="product.id"
+                    @click.stop="moveproduct(product,products.arr,selectedGroup.arr)">
+                    <img class="stdPic" :src="product.img || defimg" />
+                    <div class="nameCNT">{{ product.id + 1 }}. {{ product.name }}</div>
+
+                </li>
+            </div>
+
+            <div v-for="group in groups" :key="group.id"
+                :class="{okragly:true, active : selectedGroup === group, bad : isbad(group)}"
+                @click.stop="selectGroup(group)">
+                <div class="badInfo">
+                    <b>
+                        <div v-if="notEnough(group)">TOO SMALL</div>
+                        <div v-if="tooMuch(group)">TOO BIG</div>
+                        <div v-if="notEnough(group)">{{ group.arr.length}} is less than {{minPerGroup}}</div>
+                        <div v-if="tooMuch(group)">{{ group.arr.length}} is more than {{maxPerGroup}}</div>
+                    </b>
+                </div>
+                {{ group.letter }} - {{ group.arr.length}} products
+                <li v-for="product in group.arr" :key="product.id"
+                    @click.stop="moveproduct(product,group.arr,selectedGroup.arr)">
+                    <img class="stdPic" :src="product.img || defimg" />
+                    TODO : video, description
+                    <div class="nameCNT">{{ product.name }}</div>
+                    <div class="productPrice">{{ product.price }}</div>
+                </li>
+
+            </div>
+        </div>
+        <h3 @click="selectGroup(products)">TEXT OUTPUT:</h3>
+        <pre id="output_pre" @click="selectGroup(products)">
+            {{ totalproducts }} products in total, {{ groups.length }} groups, {{ products.arr && products.arr.length }} remained unassigned.
+            {{ textVersion }}
+        </textarea>
+    
+
+</div>
+</body>
+
+<script defer>
+    document.addEventListener('DOMContentLoaded', function () {
+
+
+        letters = "abcdefghijklmnopqrstuwxyz";
+        groupsArr = letters.toUpperCase().split("");
+        LETTERS = letters.toUpperCase().split("");
+        
+        // Vue.use(Vuefire);
+
+        if (window.firebase){ // allow to work without firebase
+        firebaseWrap = window.firebase
+        db = firebaseWrap.database();
+        root = db.ref();
+        window.db = db;
+    }else{
+        firebaseWrap = window.firebaseMock
+        db = firebaseWrap.database();
+        root = db.ref();
+        window.db = db;
+    }
+    
+        /*
+        TODO.
+
+        DONE - WRITE FUNCTION TO SAVE TO TEXTSTRING human readable that could be sent by email
+        
+        two buttons setting some value to different group
+        in computed setter this value would change the ref
+        or just executed db query in return function assign values to groups
+        */
+        
+        
+
+        if (products_pre && products_pre.innerText.trim().length) {
+            if (products_pre.dataset.type === "plain") {
+                products = products_pre.innerText.trim().split("\n");
+                products = products.map((s, i) => {
+                    return {
+                        id: i,
+                        name: s.trim()
+                    }
+                })
+
+                groupsArr = "ABCDE".split("");
+                console.log(groupsArr)
+                groupsOOO = groupsArr.map((s, i) => {
+                    return {
+                        id: i,
+                        letter: "Group " + s,
+                        arr: []
+                    }
+                })
+            } else if (products_pre.dataset.type === "json") {
+                data = JSON.parse(products_pre.innerText);
+                groupsOOO = data.groups;
+                products = data.products;
+            }
+        } else {
+            groupsOOO = [];
+            products = [];
+        }
+        console.log(products)
+
+        products_pre.remove();
+        old_products_pre.remove();
+
+        nullGroup = {
+            id: -1,
+            arr: null
+        };
+
+        initialproductsGroup = {
+            id: -1,
+            arr: products
+        };
+
+
+v = new Vue({
+            el: "#app",
+            created() {
+                if (!window.firebase){ // allow to work without firebase
+                    this.usesFirebase = false;
+                    return;
+                }
+                // to tylko gdy ktos wprowadzi email i numer zamowienia
+                // musi byc okienko na to albo osobna stronka z okienkiem jak do loginu ale proszacym o email i order number
+                firebaseWrap.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        // User is signed in.
+                        window.loggedin = true;
+                        this.loggedin = true;
+                        this.user = user;
+                        this.alert2("logged in")
+                        this.uid = user.uid;
+                        root.child("orders")
+                        .child(this.uid)
+                        .on('value', (snap) => {
+                            this.danesurowe = snap.val();
+                            window.d = snap.val();
+                            this.updateItemsFromFDB(this.danesurowe);
+                            // this.lastEdited = this.danesurowe.when || "no date available";
+                        })
+                        // root.child("orders")
+                        // .child(this.uid)
+                        // .child("settings")
+                        // .once('value', (snap) => {
+                        //     gs = snap.val();
+                        //     this.minPerGroup = gs.minPerGroup;
+                        //     this.maxPerGroup = gs.maxPerGroup;
+                        //     this.module = gs.module;
+                        //     document.title = gs.module + " groups"
+                        // })  
+                        
+                    } else {
+                        this.alert2("not logged in");
+                        this.loggedin = false;
+                        this.user = null;
+                        this.uid = null;
+
+                        // No user is signed in.
+                       
+                    }
+                });
+
+            },
+            data() {
+                return {
+                    usesFirebase: true,
+                    defimg:"defimg.png",
+                    lastEdited: "",
+                    alert2msg:"",
+                    em: "",
+                    pass: "",
+                    err: "",
+                    uid: null,
+                    user: window.user,
+                    danesurowe: null,
+                    loggedin:window.loggedin,
+                    module: "",
+                    groups: groupsOOO,
+                    selectedproduct: null,
+                    products: initialproductsGroup,
+                }
+            },
+            computed: {
+                textVersion() {
+                    a = "This text is automatically generated by vue-grouper";
+                    a += "\n #. Group Letter :\n";
+                    a += "\t #. lastname, firstname\n";
+                    this.groups.forEach(group => {
+                        a += "\n " + (group.id + 1) + ". " + group.letter + " :\n";
+                        group.arr.forEach((stdnt, id) => {
+                            a += "\t " + (id + 1) + ". " + stdnt.name + "\n";
+                        });
+                    });
+                    a += "\n Unassigned :\n";
+                    this.products.arr.forEach((stdnt, id) => {
+                            a += "\t " + (id + 1) + ". " + stdnt.name + "\n";
+                        });
+                    return a;
+                },
+                productToTextLine(stdnt,id){
+                    return "\t " + (id + 1) + ". " + stdnt.name + "\n";
+                },
+                totalproducts() {
+                    if (this.products.arr) {
+                        stu_amt = this.products.arr.length;
+                    }
+
+                    return this.groups.map(group => group.arr.length).reduce((pv, cv) =>
+                        pv + cv,
+                        0) + stu_amt;
+                },
+                canLogin() {
+                    return this.em.trim().length > 0 && this.pass.trim().length > 0;
+                },
+                // products: {
+                //     get() {
+                //         return initialproductsGroup;
+                //     },
+                //     set(nuval) {
+                //         if (nuval.arr){
+                //             initialproductsGroup.arr = 
+                //         }
+                //         nuval.arr = [];
+                //     }
+                // }
+            },
+            methods: {
+                updateOrderFromDB(d){
+                    
+                },
+                updateItemsFromFDB(d){
+                    if (!d.products && !d.groups && d.length){ 
+                        // its similar to line separated text, user tries to import array of ungrouped people
+                         this.products.arr = this.products.arr.concat(d);
+                    } else if (!d.products.arr){
+                         this.products = initialproductsGroup;
+                         this.selectedGroup = this.products;
+                         this.groups = d.groups;
+                    }else{
+                        this.products = d.products;
+                        this.selectedGroup = this.products;
+                        this.groups = d.groups;
+                    }
+                },
+                signOut() {
+                    firebaseWrap.auth().signOut()
+                        .then(function () {
+                            // Sign-out successful.
+                            this.alert2("signed out");
+                        })
+                        .catch(function (error) {
+                            // An error happened
+                            this.alert2(error);
+                        });
+                },
+                alert2(msg){
+                    this.alert2msg = msg;
+                },
+                login() {
+                    if (!this.em || !this.pass) {
+                        console.log(this.em, this.pass, "invalid em or pass");
+                        return;
+                    }
+                    this.alert2("logging ");
+                    firebaseWrap.auth().signInWithEmailAndPassword(this.em, this.pass).then((authsucc) => {
+                        console.log(user);
+                        this.err = "OK";
+                        this.uid = authsucc.user.uid;
+                        this.loggedin = true;
+
+                    }).catch(error => {
+                        // Handle Errors here.
+                        var errorCode = error.code;
+                        var errorMessage = error.message;
+                        // ...
+
+                        this.err = error.code + errorMessage;
+                        this.alert2(this.err);
+                    });
+                },
+                addOrder() {
+                    let l = this.orders.length
+                    let nOrder = {
+                        id: l,
+                        letter: 'Group ' + LETTERS[l],
+                        arr: []
+                    }
+                    this.groups.push(nOrder);
+                    this.selectGroup(nOrder);
+                },
+                removeGroup() {
+                    this.products.arr = this.products.arr.concat(this.groups.pop().arr);
+                    this.selectGroup(this.products);
+                },
+                moveproduct(clickedproduct, from, to) {
+                    //alert(clickedproduct.name);
+                    
+                    if (to != null && from != null) {
+                        this.selectedproduct = removeIf(from, (product) => {
+                            return product.id === clickedproduct.id
+                        })[0];
+                        to.push(this.selectedproduct);
+
+                    }
+                },
+                selectGroup(clickedGroup) {
+                    if (!clickedGroup){
+                        throw new Error("somehow you managed to click non existing group");
+                    }
+                    this.selectedGroup = clickedGroup;
+                    this.selectedGroupid = clickedGroup.id;
+
+                },
+                getDataToSave(){
+                    currentDate = new Date();
+
+                    u = {
+                        groups:this.groups,
+                        products:this.products,
+                        when:currentDate.toGMTString(),
+                        timestamp: currentDate.getTime()
+                    };
+                    return u;
+                },
+                saveToDB(){
+                    
+                    ObjToSave = this.getDataToSave();
+                    
+                    root.child("orders").child(this.uid)
+                    .child("laststate")
+                    .set(ObjToSave)
+                    .then(s=>this.alert2("saved to db"));
+                    root.child("grupy").child(this.uid)
+                    .child("history")
+                    .push(ObjToSave)
+                    .then(s=>this.alert2("saved to db"));
+                },
+                loadFromTEXT(dt,file){
+                    /*
+TODO : 
+show interface with empty list on start
+loading from database should be only allowed when logged in
+0. pattern specification
+1. opening the file saved with this app
+2. add / delete product (would help with opeming weird files)
+                    */
+                    console.log("loading from TEXT",dt)
+                    if (dt && dt.trim().length) {
+                        if (!dt.includes("This text is automatically generated by vue-grouper")){
+                           persons = this.simpleLinesToUnassigned
+              (dt)
+                        } else {
+                            alert("This text is automatically generated by vue-grouper")
+                            persons = this.generatedTEXTToPersons(dt)
+                        }
+                        
+                       
+
+                
+                this.lastLoadedFilename = file.name;
+                this.lastEdited = file.lastModifiedDate;
+                this.selectedGroup = this.products;
+// something is not yet right here
+                    } else {
+                    alert("no string in file");
+                }
+            },
+            /**
+             * parses text files generated by this app
+             */
+            generatedTEXTToPersons(dt){
+
+                const gmGroupHeaderRGX = /(\d\. Group . :)|(Unassigned :)/gm; // identifying Group section titles
+                const groupHeaderRGX = /(\d\. Group . :)|(Unassigned :)/; // identifying Group section titles
+                const noRGX = /^\s{1,3}\d{1,3}\./gm // for identifying indented "1."" product numbers
+                
+                let groupchunks = dt.trim().split(gmGroupHeaderRGX);
+                groupchunks = groupchunks.filter( x => x && !groupHeaderRGX.test(x)); // remove group headers
+                let unassigned = groupchunks.pop();// separate lest unassigned group
+                groupchunks.shift();// remove header and pattern legend
+                unassignedArr =  groupchunks.map( x => x.split(noRGX).filter(x=>x.trim()).map(x=>x.trim())); //split by product number, filter out empties, trim whitespaces on elements
+                groupArrs = groupchunks.map( x => x.split(noRGX).filter(x=>x.trim()).map(x=>x.trim())); //split by product number, filter out empties, trim whitespaces on elements
+                groupArrs = groupArrs.map(this.strArr_To_indexedObjsArr)// each product name string to object with id
+                .map((studs, i) => {// each group to object with id, letter , and arr of products
+                    return ({
+                        id: i,
+                        letter: "Group " + LETTERS[i],
+                        arr: studs
+                    });
+                });
+                unassignedArr =  unassigned.split(noRGX).filter(x=>x.trim()).map(x=>x.trim()); //split by product number, filter out empties, trim whitespaces on elements
+                unassignedArr = this.strArr_To_indexedObjsArr(unassignedArr);
+                this.products.arr = unassignedArr;
+                this.groups = groupArrs;
+                linesInFile = dt.trim().split("\n");
+                // WIP
+                linesInFileIndexed = this.strArr_To_indexedObjsArr(linesInFile);
+                return linesInFileIndexed;
+            },
+            simpleLinesToUnassigned(dt){
+                linesInFile = dt.trim().split("\n");
+                persons = this.strArr_To_indexedObjsArr(linesInFile);
+                this.products.arr = this.products.arr.concat(persons);
+            },
+            strArr_To_indexedObjsArr(strArr){
+                indexedObjsArr = strArr.map((s, i) => {
+                    return ({
+                        id: i,
+                        name: s.trim()
+                    });
+                });
+                return indexedObjsArr;
+            },
+            loadFromJSON(dt,file){
+                    console.log("loading form JSON",dt)
+                    try{
+                    ob = JSON.parse(dt);
+                        this.updateItemsFromFDB(ob);
+                        this.lastLoadedFilename = file.name;
+                        this.lastEdited = file.lastMo
+                    }
+                    catch(e){
+                        alert("Json format in the file is not compatible with this app")
+                    throw e;
+                    }
+
+                },
+                loadStringFromFile(ev,func){
+                    file = ev.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = ev => func(ev.target.result,file);
+                    reader.readAsText(file);
+                },
+                //todo  OPENfrom JSON, Open from Text
+                saveToJSON(){
+                    a = JSON.stringify(this.getDataToSave(), null, 2);
+                    this.saveStringToFile(a,".json");; 
+                },
+                saveToTEXT(){
+                    a = this.textVersion;
+                    this.saveStringToFile(a,".txt");
+                },
+                saveStringToFile(string_to_save,ext) {
+                    console.log(string_to_save);
+                    _fnm = this.lastLoadedFilename || this.module + "_groups";
+                    var d = new Date();
+                    datepostfix = formatDate(d, "___dddd_h_mmtt_d_MMM_yyyy");
+                //debugger;
+                    if (_fnm.includes("___")) {
+                        _fnm = _fnm.split("___")[0]; // cut the date part away from original
+                    }
+                    saveText(string_to_save, _fnm + datepostfix + ext);
+                    //this.selectGroup(this.products)
+                }
+            }
+        })
+
+
+        function saveText(text, filename) {
+            var a = document.createElement('a');
+            a.setAttribute('href', 'data:text/plain;charset=utf-u,' + encodeURIComponent(text));
+            a.setAttribute('download', filename);
+            a.click();
+        }
+
+        /**
+         * this probably could be replaced by smart use of Array.filter
+         */
+        function removeIf(arr, predicate) {
+            for (var i = 0; i < arr.length; i++) {
+                if (predicate(arr[i])) {
+                    return arr.splice(i--, 1);
+                }
+            }
+        }
+
+        // external libraries
+
+
+        function formatDate(date, format, utc) {
+            var MMMM = ["\x00", "January", "February", "March", "April", "May", "June", "July",
+                "August",
+                "September",
+                "October", "November", "December"
+            ];
+            var MMM = ["\x01", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+                "Nov",
+                "Dec"
+            ];
+            var dddd = ["\x02", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+                "Saturday"
+            ];
+            var ddd = ["\x03", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+            function ii(i, len) {
+                var s = i + "";
+                len = len || 2;
+                while (s.length < len) s = "0" + s;
+                return s;
+            }
+
+            var y = utc ? date.getUTCFullYear() : date.getFullYear();
+            format = format.replace(/(^|[^\\])yyyy+/g, "$1" + y);
+            format = format.replace(/(^|[^\\])yy/g, "$1" + y.toString().substr(2, 2));
+            format = format.replace(/(^|[^\\])y/g, "$1" + y);
+
+            var M = (utc ? date.getUTCMonth() : date.getMonth()) + 1;
+            format = format.replace(/(^|[^\\])MMMM+/g, "$1" + MMMM[0]);
+            format = format.replace(/(^|[^\\])MMM/g, "$1" + MMM[0]);
+            format = format.replace(/(^|[^\\])MM/g, "$1" + ii(M));
+            format = format.replace(/(^|[^\\])M/g, "$1" + M);
+
+            var d = utc ? date.getUTCDate() : date.getDate();
+            format = format.replace(/(^|[^\\])dddd+/g, "$1" + dddd[0]);
+            format = format.replace(/(^|[^\\])ddd/g, "$1" + ddd[0]);
+            format = format.replace(/(^|[^\\])dd/g, "$1" + ii(d));
+            format = format.replace(/(^|[^\\])d/g, "$1" + d);
+
+            var H = utc ? date.getUTCHours() : date.getHours();
+            format = format.replace(/(^|[^\\])HH+/g, "$1" + ii(H));
+            format = format.replace(/(^|[^\\])H/g, "$1" + H);
+
+            var h = H > 12 ? H - 12 : H == 0 ? 12 : H;
+            format = format.replace(/(^|[^\\])hh+/g, "$1" + ii(h));
+            format = format.replace(/(^|[^\\])h/g, "$1" + h);
+
+            var m = utc ? date.getUTCMinutes() : date.getMinutes();
+            format = format.replace(/(^|[^\\])mm+/g, "$1" + ii(m));
+            format = format.replace(/(^|[^\\])m/g, "$1" + m);
+
+            var s = utc ? date.getUTCSeconds() : date.getSeconds();
+            format = format.replace(/(^|[^\\])ss+/g, "$1" + ii(s));
+            format = format.replace(/(^|[^\\])s/g, "$1" + s);
+
+            var f = utc ? date.getUTCMilliseconds() : date.getMilliseconds();
+            format = format.replace(/(^|[^\\])fff+/g, "$1" + ii(f, 3));
+            f = Math.round(f / 10);
+            format = format.replace(/(^|[^\\])ff/g, "$1" + ii(f));
+            f = Math.round(f / 10);
+            format = format.replace(/(^|[^\\])f/g, "$1" + f);
+
+            var T = H < 12 ? "AM" : "PM";
+            format = format.replace(/(^|[^\\])TT+/g, "$1" + T);
+            format = format.replace(/(^|[^\\])T/g, "$1" + T.charAt(0));
+
+            var t = T.toLowerCase();
+            format = format.replace(/(^|[^\\])tt+/g, "$1" + t);
+            format = format.replace(/(^|[^\\])t/g, "$1" + t.charAt(0));
+
+            var tz = -date.getTimezoneOffset();
+            var K = utc || !tz ? "Z" : tz > 0 ? "+" : "-";
+            if (!utc) {
+                tz = Math.abs(tz);
+                var tzHrs = Math.floor(tz / 60);
+                var tzMin = tz % 60;
+                K += ii(tzHrs) + ":" + ii(tzMin);
+            }
+            format = format.replace(/(^|[^\\])K/g, "$1" + K);
+
+            var day = (utc ? date.getUTCDay() : date.getDay()) + 1;
+            format = format.replace(new RegExp(dddd[0], "g"), dddd[day]);
+            format = format.replace(new RegExp(ddd[0], "g"), ddd[day]);
+
+            format = format.replace(new RegExp(MMMM[0], "g"), MMMM[M]);
+            format = format.replace(new RegExp(MMM[0], "g"), MMM[M]);
+
+            format = format.replace(/\\(.)/g, "$1");
+
+            return format;
+        }
+
+
+
+    });
+</script>
+
+</html>
+
+<style scoped>
+    fieldset,.bubu {
+        margin: 0.5em;
+        font-size: 1em;
+        padding: 0.5em;
+        border:1px solid rgba(218, 214, 214, 0.5);
+
+        font-family: sans-serif;
+    }
+
+    .studs {
+        width: 20vw;
+        padding: 5px;
+        /* background-color: rgb(115, 74, 156); */
+        border: 1px solid rgba(218, 214, 214, 0.5);
+        transition: all 0.3s;
+        /* background-color: rgba(250, 250, 250, 1); */
+        /* border-width: 2px; */
+        /* border: 1px solid rgba(250, 250, 250, 0.5); */
+    }
+
+    .s {
+        width: 2em;
+        font-size: inherit;
+        padding: 0.2em;
+        margin: 0.1em 0.2em;
+        -moz-box-sizing: content-box;
+        -webkit-box-sizing: content-box;
+        box-sizing: content-box;
+    }
+
+    button {
+        margin: 10px;
+        box-shadow: 3px 3px 0px 0px rgb(0, 0, 0)
+    }
+
+    #app {
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap:wrap;
+    }
+
+    .worktop{
+        background-color: #f5f5f5;
+        border-radius: 10px;
+        border: 2px solid #f5f500;
+        align-items: flex-start;
+}
+.worktop-selected{
+        background-color: #bba7b8;
+        border-radius: 10px;
+        border: 2px solid #f5f500;
+        align-items: flex-start;
+}
+
+    li,
+    ul,
+    .okragly,
+    .studs {
+        border-radius: 10px;
+        margin: 5px;
+    }
+
+    li {
+        padding: 5px;
+    }
+
+    ul,
+    .okragly {
+        /* width: 20vw; */
+        padding: 5px;
+        background-color: rgba(218, 214, 214, 1);
+        border: 1px solid rgba(218, 214, 214, 0.5);
+        transition: all 0.3s;
+    }
+
+    li {
+        display: flex;
+        border: 1px solid rgb(185, 206, 218, 0.5);
+        /* width:fit-content; */
+        list-style-type: none;
+        margin: 5px;
+        background-color: rgb(185, 206, 218);
+        transition: all 0.3s;
+        box-shadow: 3px 3px 0px 0px rgba(3, 3, 3, 0.288);
+    }
+
+    li:hover {
+        background-color: #9cb4c0;
+    }
+
+    li:active {
+        background-color: #4ebcf7;
+    }
+
+    .active {
+        transition: all 0.3s;
+        background-color: rgba(187, 167, 184, 1);
+        /* border-width: 2px; */
+        transform: scale(1.01);
+    }
+
+    .bad {
+        border: 4px solid red;
+    }
+
+    .badInfo {
+        
+        color: red;
+        align-self: stretch;
+    }
+
+    
+
+    a,
+    a:link,
+    a:visited,
+    a:active {
+        color: #3ca9e2;
+        transition: all 0.2s ease;
+    }
+
+    a:focus,
+    a:hover,
+    a:link:focus,
+    a:link:hover,
+    a:visited:focus,
+    a:visited:hover,
+    a:active:focus,
+    a:active:hover {
+        color: #329dd5;
+        transition: all 0.2s ease;
+    }
+
+    #login-form-wrap {
+        background-color: #fff;
+        width: 100%;
+        margin: 30px auto;
+        text-align: center;
+        padding: 20px 0 0 0;
+        border-radius: 4px;
+        box-shadow: 0px 30px 50px 0px rgba(0, 0, 0, 0.2);
+    }
+
+    #login-form {
+        padding: 0 60px;
+    }
+
+    input {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        outline: none;
+        height: 2em;
+        line-height: 60px;
+        border-radius: 4px;
+    }
+
+    input[type=password],
+    input[type=email] {
+        width: 100%;
+        padding: 0 0 0 10px;
+        margin: 0;
+        color: #8a8b8e;
+        border: 1px solid #c2c0ca;
+        font-style: normal;
+        font-size: 16px;
+        appearance: none;
+        position: relative;
+        display: inline-block;
+        background: none;
+    }
+
+    input[type=password]:focus,
+    input[type=email]:focus {
+        border-color: #3ca9e2;
+    }
+
+    input[type=password]:focus:invalid,
+    input[type=email]:focus:invalid {
+        color: #cc1e2b;
+        border-color: #cc1e2b;
+    }
+
+    input[type=password]:valid~.validation,
+    input[type=email]:valid~.validation {
+        display: block;
+        border-color: #0C0;
+    }
+
+    input[type=password]:valid~.validation span,
+    input[type=email]:valid~.validation span {
+        background: #0C0;
+        position: absolute;
+        border-radius: 6px;
+    }
+
+    input[type=password]:valid~.validation span:first-child,
+    input[type=email]:valid~.validation span:first-child {
+        top: 30px;
+        left: 14px;
+        width: 20px;
+        height: 3px;
+        transform: rotate(-45deg);
+    }
+
+    input[type=password]:valid~.validation span:last-child,
+    input[type=email]:valid~.validation span:last-child {
+        top: 35px;
+        left: 8px;
+        width: 11px;
+        height: 3px;
+        transform: rotate(45deg);
+    }
+
+    .validation {
+        display: none;
+        position: absolute;
+        content: " ";
+        height: 60px;
+        width: 30px;
+        right: 15px;
+        top: 0px;
+    }
+
+    input[type=submit] {
+        border: none;
+        display: block;
+        background-color: #3ca9e2;
+        color: #fff;
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 18px;
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    input[type=submit]:hover {
+        background-color: #329dd5;
+        transition: all 0.2s ease;
+    }
+
+    #create-account-wrap {
+        background-color: #eeedf1;
+        color: #8a8b8e;
+        font-size: 14px;
+        width: 100%;
+        padding: 10px 0;
+        border-radius: 0 0 4px 4px;
+    }
+
+    .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .alert2msg{
+        border: 1px solid black;
+        background-color: #bdbdbe;
+    }
+
+    
+    .s {
+        width: 4em;
+        font-size: inherit;
+        padding: 0.2em;
+        margin: 0.1em 0.2em;
+        -moz-box-sizing: content-box;
+        -webkit-box-sizing: content-box;
+        box-sizing: content-box;
+        display: inline-block;
+    }
+
+    .okragly:hover, 
+    .bubu:hover {
+    transform: scale(1.05);
+}
+
+.bubu {
+    transition: all 0.2s ease;
+}
+
+.stdPic {
+    border-radius: 20%;
+    height: 3em;
+}
+
+
+.nameCNT {
+    display: inline-flex;
+    flex-wrap: wrap;
+    width: min-content;
+    margin-left: 5;
+}
+</style>
+</style>

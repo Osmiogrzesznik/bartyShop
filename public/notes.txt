@@ -1,0 +1,13 @@
+potrzebny jest email tylko i numer zamowienia 
+1. klient wchodzi na strone, - dostep do firebase do node - products
+2. przy zamowieniu musi podac email - do kontaktu
+    2a. numer zamowienia pochodzi z firebase push i retrieve key
+    2b. kazdy moze wykonac zamowienie, kazdy moze tworzyc order
+3. numer zamowienia(kod generowany przez firabase ) staje sie equivalentem hasla
+4. przy nast logowaniu trzeba podac numer zamowienia, bartek moze sie z nimi kontaktowac 
+5. DB rules write read access if it is either user or barty(store his uid as admin)
+
+1. problem z dostepem - niekoniecznie , kazdy moze pisac i nadpisac czytac swoj order i czytac itemy, bartek moze wszystko i pisac i nadpisac itemy
+2 root.items musi miec albo osobna root.item_quantity ktory uzytkownicy moga nadpisac albo tylko bartek moze updateowac quatity
+
+tak naprawde lepiej jest produkty - strony zrobic 

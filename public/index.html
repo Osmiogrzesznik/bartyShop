@@ -1,0 +1,1117 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <title>sklep proj</title>
+
+</head>
+<!-- <script defer src="/__/firebase/7.7.0/firebase-app.js"></script> -->
+<!-- include only the Firebase features as you need -->
+<!-- <script defer src="/__/firebase/7.7.0/firebase-auth.js"></script> -->
+<!-- <script defer src="/__/firebase/7.7.0/firebase-database.js"></script> -->
+<!-- <script defer src="/__/firebase/7.7.0/firebase-messaging.js"></script> -->
+<!-- <script defer src="/__/firebase/7.7.0/firebase-storage.js"></script>  -->
+<!-- initialize the SDK after all desired features are loaded -->
+<!-- <script defer src="/__/firebase/init.js"></script> -->
+
+<script src="vue.js"></script>
+<script src="firebaseMock.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/vuefire/2.2.1/vuefire.js"
+    integrity="sha256-B4XqB3RtUc1NKAxl8f+wUx/+O4yfa08E9m/4B3H044Q=" crossorigin="anonymous"></script> -->
+
+<!-- <script src="https://www.gstatic.com/firebasejs/ui/4.3.0/firebase-ui-auth.js"></script>
+<link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.3.0/firebase-ui-auth.css" /> -->
+</head>
+<!-- The surrounding HTML is left untouched by FirebaseUI.
+         Your app may use that space for branding, controls and other customizations.-->
+
+<body>
+    <pre id="products_pre" data-type="json">
+
+      </pre>
+    <pre id="old_products_pre" data-type="json">
+      </pre>
+    <div id="app">
+
+        <div class="alert2msg" v-if="usesFirebase"> <button class="okragly" @click.stop="signOut">Log out</button>
+            {{ alert2msg }}
+            {{ module }}</div>
+
+
+        <div v-if="!loggedin && usesFirebase">
+            <div id="login-form-wrap">
+                <h2>Login</h2>
+
+                <div id="login-form">
+
+                    <p>
+                        <input type="email" id="email" name="email" placeholder="Email Address" v-model="em" required><i
+                            class="validation"><span></span><span></span></i>
+                    </p>
+                    <p>
+                        <input type="password" id="password" name="password" placeholder="password" v-model="pass"
+                            required><i class="validation"><span></span><span></span></i>
+                    </p>
+                    <p>
+                        {{ err }}
+                        <input v-if="!canLogin" type="submit" id="login3" value="Login" style="opacity: 0.2;">
+                        <input v-if="canLogin" type="submit" id="login" value="Login" @click="login">
+
+                    </p>
+                </div>
+                <div id="create-account-wrap">
+                    <p>Not a member? <a href="#">Sorry, You have to enter you order number to access the
+                            information.</a>
+                        <p>
+                </div>
+                <!--create-account-wrap-->
+            </div>
+            <!--login-form-wrap-->
+
+        </div>
+        <h1 @click="selectProduct(products)">{{ module }} module groups:</h1>
+        <div class="row" @click="selectProduct(nullProduct)">
+
+            <fieldset>
+                <div class="row multirow">
+                    <button class="okragly" @click.stop="addGroup">Add Group</button>
+                    <button class="okragly" @click.stop="removeGroup">Remove Group</button>
+
+                    <button class="okragly" @click.stop="saveToDB">SAVE CHANGES</button>
+                    <button class="okragly" @click.stop="saveToJSON">SAVE as JSON</button>
+                    <button class="okragly">Load from JSON
+                        <input type="file" id="f2" @change="loadStringFromFile($event,loadFromJSON)" />
+                    </button>
+                </div>
+            </fieldset>
+            <br>
+        </div>
+        <div class="product_cards_list">
+            <div v-for="product in products" :key="product.id" class="product">
+                <div class="product__photo">
+                    <div class="photo-container">
+                        <div class="photo-main">
+                            <div class="controls">
+                                <i class="material-icons">share</i>
+                                <i class="material-icons">favorite_border</i>
+                            </div>
+                            <img :src="product.selectedImage" alt="product.name">
+                        </div>
+                        <div class="photo-album">
+                            <ul>
+                                <li v-for="prodimg in product.img" :key="prodimg.id" class="zoom_hilit"
+                                    @click="selectImage(prodimg,product)">
+                                    <img :src="prodimg">
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="product__info">
+                    <div class="title">
+                        <h1>{{ product.name }}</h1>
+                        <span>COD: 45999</span>
+                    </div>
+                    <div class="price">
+                        £ <span>{{ sumujKosztZOpcjami(product)}}</span>
+                    </div>
+                    <div class="opcje">
+                        <ul>
+                            <li v-for="opcja in product.opcje" :key="opcja.id">
+                                <input type="checkbox" v-model="opcja.aktywna">{{opcja.name}}</input><br>
+                                {{ opcja.description }}
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="description">
+                        <h3>Product Details</h3>
+                        {{product.description}}
+                    </div>
+                    <button class="buy--btn zoom_hilit" @click="addToCart(product)">ADD TO CART</button>
+                </div>
+            </div>
+        </div>
+
+        --------------------------------------------------------------------------------------
+        --------------------------------------------------------------------------------
+        <div v-for="product in products" :key="product.id" class="okragly prod_listing"
+            @click="selectProduct(nullProduct)">
+            <h1>{{ product.name }}</h1>
+            <img class="prod_img" :src="primaryProductImage(product)">
+            <p class="prod_desc">{{product.description}}</p>
+
+        </div>
+    </div>
+
+
+
+    </div>
+</body>
+
+<script defer>
+    // document.addEventListener('load', function () {
+    function lll(...ms) {
+        console.log(...ms)
+    }
+
+    Storage.prototype.setObject = function (key, value) {
+        this.setItem(key, JSON.stringify(value));
+    }
+
+    Storage.prototype.getObject = function (key) {
+        return JSON.parse(this.getItem(key));
+    }
+
+    letters = "abcdefghijklmnopqrstuwxyz";
+    groupsArr = letters.toUpperCase().split("");
+    LETTERS = letters.toUpperCase().split("");
+
+    // Vue.use(Vuefire);
+
+    if (window.firebase) { // allow to work without firebase
+        firebaseWrap = window.firebase
+        db = firebaseWrap.database();
+        root = db.ref();
+        window.db = db;
+    } else {
+        firebaseWrap = window.firebaseMock
+        db = firebaseWrap.database();
+        root = db.ref();
+        window.db = db;
+    }
+
+    /*
+    TODO.
+
+    DONE - WRITE FUNCTION TO SAVE TO TEXTSTRING human readable that could be sent by email
+    
+    two buttons setting some value to different group
+    in computed setter this value would change the ref
+    or just executed db query in return function assign values to groups
+    */
+
+
+
+    if (products_pre && products_pre.innerText.trim().length) {
+        if (products_pre.dataset.type === "plain") {
+            products = products_pre.innerText.trim().split("\n");
+            products = products.map((s, i) => {
+                return {
+                    id: i,
+                    name: s.trim()
+                }
+            })
+
+            groupsArr = "ABCDE".split("");
+            console.log(groupsArr)
+            groupsOOO = groupsArr.map((s, i) => {
+                return {
+                    id: i,
+                    letter: "Group " + s,
+                    arr: []
+                }
+            })
+        } else if (products_pre.dataset.type === "json") {
+            data = JSON.parse(products_pre.innerText);
+            groupsOOO = data.orders;
+            products = data.products;
+        }
+    } else {
+        groupsOOO = [];
+        products = [];
+    }
+    console.log(products)
+
+    products_pre.remove();
+    old_products_pre.remove();
+
+    nullProduct = {
+        id: -1,
+    };;
+
+
+
+
+
+    v = new Vue({
+        el: "#app",
+        created() {
+            // if (!window.firebase) { // allow to work without firebase
+            //     this.usesFirebase = false;
+            //     return;
+            // }
+            // to tylko gdy ktos wprowadzi email i numer zamowienia
+            // musi byc okienko na to albo osobna stronka z okienkiem jak do loginu ale proszacym o email i order number
+            firebaseWrap.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    // User is signed in.
+                    window.loggedin = true;
+                    this.loggedin = true;
+                    this.user = user;
+                    this.alert2("logged in")
+                    this.uid = user.uid;
+                    root.child("orders")
+                        .child(this.uid)
+                        .on('value', (snap) => {
+                            this.danesurowe = snap.val();
+                            window.d = snap.val();
+                            this.updateOrderFromDB(this.danesurowe);
+                            // this.lastEdited = this.danesurowe.when || "no date available";
+                        })
+                    // root.child("orders")
+                    // .child(this.uid)
+                    // .child("settings")
+                    // .once('value', (snap) => {
+                    //     gs = snap.val();
+                    //     this.minPerGroup = gs.minPerGroup;
+                    //     this.maxPerGroup = gs.maxPerGroup;
+                    //     this.module = gs.module;
+                    //     document.title = gs.module + " groups"
+                    // })  
+
+                } else {
+                    this.alert2("not logged in");
+                    this.loggedin = false;
+                    this.user = null;
+                    this.uid = null;
+
+                    // No user is signed in.
+
+                }
+            });
+            lll(3, 2, 1, "start")
+            this.registerProductUpdater();
+
+        },
+        data() {
+            return {
+                nullProduct: nullProduct,
+                usesFirebase: true,
+                defimg: "defimg.png",
+                lastEdited: "",
+                alert2msg: "",
+                em: "",
+                pass: "",
+                err: "",
+                uid: null,
+                user: window.user,
+                danesurowe: null,
+                loggedin: window.loggedin,
+                module: "",
+                groups: groupsOOO,
+                selectedproduct: null,
+                products: products,
+            }
+        },
+        computed: {
+            productToTextLine(stdnt, id) {
+                return "\t " + (id + 1) + ". " + stdnt.name + "\n";
+            },
+            totalproducts() {
+                return this.products.length
+            },
+            canLogin() {
+                return this.em.trim().length > 0 && this.pass.trim().length > 0;
+            },
+            // products: {
+            //     get() {
+            //         return initialproductsGroup;
+            //     },
+            //     set(nuval) {
+            //         if (nuval.arr){
+            //             initialproductsGroup.arr = 
+            //         }
+            //         nuval.arr = [];
+            //     }
+            // }
+        },
+        methods: {
+            checkoutCart() {},
+            ShowCart() {
+                c = localStorage.getItem("cartItem")
+                alert("kupujesz: produkt nr " + c)
+
+            },
+            addToCart(product) {
+                localStorage.setObject("cartItem", [product.id])
+
+            },
+            sumujKosztZOpcjami(product) {
+                let sum = 0;
+                sum += product.cost;
+                for (opkey in product.opcje) {
+                    let opcja = product.opcje[opkey]
+                    if (opcja.aktywna) {
+                        sum += opcja.cost
+                    }
+                }
+                const totalCostFl = sum / 100
+                return totalCostFl.toFixed(2)
+            },
+            registerProductUpdater() {
+                lll("registerproductupdater")
+                root.child("products")
+                    .on('value', (snap) => {
+                        this.updateProductsFromFDB(snap.val());
+                        window.p = snap.val();
+                        // this.updateOrderFromDB(this.danesurowe);
+                        // this.lastEdited = this.danesurowe.when || "no date available";
+                    })
+            },
+            updateOrderFromDB(d) {
+                this.order = d
+            },
+            updateProductsFromFDB(d) {
+                window.d = d
+                for (product_key in d) {
+                    x = d[product_key];
+                    window.x = x
+                    x.img = Object.values(x.img);
+                    x.selectedImage = x.img[0];
+                }
+
+                this.products = d
+            },
+            signOut() {
+                firebaseWrap.auth().signOut()
+                    .then(function () {
+                        // Sign-out successful.
+                        this.alert2("signed out");
+                    })
+                    .catch(function (error) {
+                        // An error happened
+                        this.alert2(error);
+                    });
+            },
+            alert2(msg) {
+                this.alert2msg = msg;
+            },
+            login() {
+                if (!this.em || !this.pass) {
+                    console.log(this.em, this.pass, "invalid em or pass");
+                    return;
+                }
+                this.alert2("logging ");
+                firebaseWrap.auth().signInWithEmailAndPassword(this.em, this.pass).then((
+                    authsucc) => {
+                    console.log(user);
+                    this.err = "OK";
+                    this.uid = authsucc.user.uid;
+                    this.loggedin = true;
+
+                }).catch(error => {
+                    // Handle Errors here.
+                    var errorCode = error.code;
+                    var errorMessage = error.message;
+                    // ...
+
+                    this.err = error.code + errorMessage;
+                    this.alert2(this.err);
+                });
+            },
+            addOrder() {},
+            removeGroup() {
+                this.products.arr = this.products.arr.concat(this.groups.pop().arr);
+                this.selectProduct(this.products);
+            },
+            selectImage(prodimg, product) {
+                product.selectedImage = prodimg
+            },
+            selectProduct(clickedProduct) {
+                if (!clickedProduct) {
+                    throw new Error("somehow you managed to click non existing group");
+                }
+                this.selectedProduct = clickedProduct;
+                this.selectedProductid = clickedProduct.id;
+            },
+            primaryProductImage(product) {
+                if (product.hasOwnProperty('selectedImage')) {
+                    return product.selectedImage
+                }
+                return product.img[0];
+                // TODO nie zmienia sie - move to computed albo watched
+            },
+            getDataToSave() {
+                currentDate = new Date();
+
+                u = {
+                    id: "ffjkfdslkfdsf", // pozniej replace by fdb key
+                    product_id: this.selectedProduct.id,
+                    client: {
+                        name: this.clientName,
+                        surname: this.clientSurname,
+                        deliveryAddress: {
+                            mieszkanie: 10,
+                            brama: 10,
+                            ulica: "bubu avenue"
+                        },
+                        billingAddress: {
+                            mieszkanie: 10,
+                            brama: 10,
+                            ulica: "bubu avenue"
+                        }
+                    },
+                    when: currentDate.toGMTString(),
+                    timestamp: currentDate.getTime()
+                };
+                return u;
+            },
+            saveToDB() {
+                this.removeAbilityToQuicklyReorderItemByMistake();
+                ObjToSave = this.getDataToSave();
+
+                root.child("orders").push(ObjToSave)
+                    .then(snap => {
+                        this.lastPushedOrderKey = snap.key;
+                        this.informUserThatheJustOrdered()
+                        this.alert2("saved to db");
+
+                    });
+                // root.child("grupy").child(this.uid)
+                //     .child("history")
+                //     .push(ObjToSave)
+                //     .then(s => this.alert2("saved to db"));
+            },
+            informUserThatheJustOrdered() {
+                alert("you just ordered")
+            },
+            removeAbilityToQuicklyReorderItemByMistake() {
+                alert("removeAbilityToQuicklyReorderItemByMistake")
+            },
+            loadFromJSON(dt, file) {
+                console.log("loading form JSON", dt)
+                try {
+                    ob = JSON.parse(dt);
+                    this.updateProductsFromFDB(ob);
+                    this.lastLoadedFilename = file.name;
+                    this.lastEdited = file.lastMo
+                } catch (e) {
+                    alert("Json format in the file is not compatible with this app")
+                    throw e;
+                }
+
+            },
+            loadStringFromFile(ev, func) {
+                file = ev.target.files[0];
+                const reader = new FileReader();
+                reader.onload = ev => func(ev.target.result, file);
+                reader.readAsText(file);
+            },
+            //todo  OPENfrom JSON, Open from Text
+            saveToJSON() {
+                a = JSON.stringify(this.getDataToSave(), null, 2);
+                this.saveStringToFile(a, ".json");;
+            },
+            saveStringToFile(string_to_save, ext) {
+                console.log(string_to_save);
+                _fnm = this.lastLoadedFilename || this.module + "_groups";
+                var d = new Date();
+                datepostfix = formatDate(d, "___dddd_h_mmtt_d_MMM_yyyy");
+                //debugger;
+                if (_fnm.includes("___")) {
+                    _fnm = _fnm.split("___")[0]; // cut the date part away from original
+                }
+                saveText(string_to_save, _fnm + datepostfix + ext);
+                //this.selectProduct(this.products)
+            }
+        }
+    })
+
+
+    function saveText(text, filename) {
+        var a = document.createElement('a');
+        a.setAttribute('href', 'data:text/plain;charset=utf-u,' + encodeURIComponent(text));
+        a.setAttribute('download', filename);
+        a.click();
+    }
+
+    /**
+     * this probably could be replaced by smart use of Array.filter
+     */
+    function removeIf(arr, predicate) {
+        for (var i = 0; i < arr.length; i++) {
+            if (predicate(arr[i])) {
+                return arr.splice(i--, 1);
+            }
+        }
+    }
+
+    // external libraries
+
+
+    function formatDate(date, format, utc) {
+        var MMMM = ["\x00", "January", "February", "March", "April", "May", "June", "July",
+            "August",
+            "September",
+            "October", "November", "December"
+        ];
+        var MMM = ["\x01", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+            "Nov",
+            "Dec"
+        ];
+        var dddd = ["\x02", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+            "Saturday"
+        ];
+        var ddd = ["\x03", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        function ii(i, len) {
+            var s = i + "";
+            len = len || 2;
+            while (s.length < len) s = "0" + s;
+            return s;
+        }
+
+        var y = utc ? date.getUTCFullYear() : date.getFullYear();
+        format = format.replace(/(^|[^\\])yyyy+/g, "$1" + y);
+        format = format.replace(/(^|[^\\])yy/g, "$1" + y.toString().substr(2, 2));
+        format = format.replace(/(^|[^\\])y/g, "$1" + y);
+
+        var M = (utc ? date.getUTCMonth() : date.getMonth()) + 1;
+        format = format.replace(/(^|[^\\])MMMM+/g, "$1" + MMMM[0]);
+        format = format.replace(/(^|[^\\])MMM/g, "$1" + MMM[0]);
+        format = format.replace(/(^|[^\\])MM/g, "$1" + ii(M));
+        format = format.replace(/(^|[^\\])M/g, "$1" + M);
+
+        var d = utc ? date.getUTCDate() : date.getDate();
+        format = format.replace(/(^|[^\\])dddd+/g, "$1" + dddd[0]);
+        format = format.replace(/(^|[^\\])ddd/g, "$1" + ddd[0]);
+        format = format.replace(/(^|[^\\])dd/g, "$1" + ii(d));
+        format = format.replace(/(^|[^\\])d/g, "$1" + d);
+
+        var H = utc ? date.getUTCHours() : date.getHours();
+        format = format.replace(/(^|[^\\])HH+/g, "$1" + ii(H));
+        format = format.replace(/(^|[^\\])H/g, "$1" + H);
+
+        var h = H > 12 ? H - 12 : H == 0 ? 12 : H;
+        format = format.replace(/(^|[^\\])hh+/g, "$1" + ii(h));
+        format = format.replace(/(^|[^\\])h/g, "$1" + h);
+
+        var m = utc ? date.getUTCMinutes() : date.getMinutes();
+        format = format.replace(/(^|[^\\])mm+/g, "$1" + ii(m));
+        format = format.replace(/(^|[^\\])m/g, "$1" + m);
+
+        var s = utc ? date.getUTCSeconds() : date.getSeconds();
+        format = format.replace(/(^|[^\\])ss+/g, "$1" + ii(s));
+        format = format.replace(/(^|[^\\])s/g, "$1" + s);
+
+        var f = utc ? date.getUTCMilliseconds() : date.getMilliseconds();
+        format = format.replace(/(^|[^\\])fff+/g, "$1" + ii(f, 3));
+        f = Math.round(f / 10);
+        format = format.replace(/(^|[^\\])ff/g, "$1" + ii(f));
+        f = Math.round(f / 10);
+        format = format.replace(/(^|[^\\])f/g, "$1" + f);
+
+        var T = H < 12 ? "AM" : "PM";
+        format = format.replace(/(^|[^\\])TT+/g, "$1" + T);
+        format = format.replace(/(^|[^\\])T/g, "$1" + T.charAt(0));
+
+        var t = T.toLowerCase();
+        format = format.replace(/(^|[^\\])tt+/g, "$1" + t);
+        format = format.replace(/(^|[^\\])t/g, "$1" + t.charAt(0));
+
+        var tz = -date.getTimezoneOffset();
+        var K = utc || !tz ? "Z" : tz > 0 ? "+" : "-";
+        if (!utc) {
+            tz = Math.abs(tz);
+            var tzHrs = Math.floor(tz / 60);
+            var tzMin = tz % 60;
+            K += ii(tzHrs) + ":" + ii(tzMin);
+        }
+        format = format.replace(/(^|[^\\])K/g, "$1" + K);
+
+        var day = (utc ? date.getUTCDay() : date.getDay()) + 1;
+        format = format.replace(new RegExp(dddd[0], "g"), dddd[day]);
+        format = format.replace(new RegExp(ddd[0], "g"), ddd[day]);
+
+        format = format.replace(new RegExp(MMMM[0], "g"), MMMM[M]);
+        format = format.replace(new RegExp(MMM[0], "g"), MMM[M]);
+
+        format = format.replace(/\\(.)/g, "$1");
+
+        return format;
+    }
+
+
+
+    // });
+</script>
+
+</html>
+
+<style scoped>
+    #app {
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .row {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .worktop {
+        background-color: #f5f5f5;
+        border-radius: 10px;
+        border: 2px solid #f5f500;
+        align-items: flex-start;
+    }
+
+    .worktop-selected {
+        background-color: #bba7b8;
+        border-radius: 10px;
+        border: 2px solid #f5f500;
+        align-items: flex-start;
+    }
+
+    .okragly,
+    .studs {
+        border-radius: 10px;
+        margin: 5px;
+    }
+
+
+    ul,
+    .okragly {
+        /* width: 20vw; */
+        padding: 1px;
+        /* background-color: rgba(218, 214, 214, 1); */
+        /* border: 1px solid rgba(218, 214, 214, 0.5); */
+        transition: all 0.3s;
+    }
+
+
+    li:active {
+        background-color: #4ebcf7;
+    }
+
+    .active {
+        transition: all 0.3s;
+        background-color: rgba(187, 167, 184, 1);
+        /* border-width: 2px; */
+        transform: scale(1.01);
+    }
+
+    .bad {
+        border: 4px solid red;
+    }
+
+    .badInfo {
+
+        color: red;
+        align-self: stretch;
+    }
+
+
+
+    a,
+    a:link,
+    a:visited,
+    a:active {
+        color: #3ca9e2;
+        transition: all 0.2s ease;
+    }
+
+    a:focus,
+    a:hover,
+    a:link:focus,
+    a:link:hover,
+    a:visited:focus,
+    a:visited:hover,
+    a:active:focus,
+    a:active:hover {
+        color: #329dd5;
+        transition: all 0.2s ease;
+    }
+
+    #login-form-wrap {
+        background-color: #fff;
+        width: 100%;
+        margin: 30px auto;
+        text-align: center;
+        padding: 20px 0 0 0;
+        border-radius: 4px;
+        box-shadow: 0px 30px 50px 0px rgba(0, 0, 0, 0.2);
+    }
+
+    #login-form {
+        padding: 0 60px;
+    }
+
+
+    input[type=text] {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        outline: none;
+        height: 2em;
+        line-height: 60px;
+        border-radius: 4px;
+    }
+
+    input[type=checkbox] {
+        padding: 0 0 0 10px;
+    }
+
+    input[type=password],
+    input[type=email] {
+        width: 100%;
+        padding: 0 0 0 10px;
+        margin: 0;
+        color: #8a8b8e;
+        border: 1px solid #c2c0ca;
+        font-style: normal;
+        font-size: 16px;
+        appearance: none;
+        position: relative;
+        display: inline-block;
+        background: none;
+    }
+
+    input[type=password]:focus,
+    input[type=email]:focus {
+        border-color: #3ca9e2;
+    }
+
+    input[type=password]:focus:invalid,
+    input[type=email]:focus:invalid {
+        color: #cc1e2b;
+        border-color: #cc1e2b;
+    }
+
+    input[type=password]:valid~.validation,
+    input[type=email]:valid~.validation {
+        display: block;
+        border-color: #0C0;
+    }
+
+    input[type=password]:valid~.validation span,
+    input[type=email]:valid~.validation span {
+        background: #0C0;
+        position: absolute;
+        border-radius: 6px;
+    }
+
+    input[type=password]:valid~.validation span:first-child,
+    input[type=email]:valid~.validation span:first-child {
+        top: 30px;
+        left: 14px;
+        width: 20px;
+        height: 3px;
+        transform: rotate(-45deg);
+    }
+
+    input[type=password]:valid~.validation span:last-child,
+    input[type=email]:valid~.validation span:last-child {
+        top: 35px;
+        left: 8px;
+        width: 11px;
+        height: 3px;
+        transform: rotate(45deg);
+    }
+
+    .validation {
+        display: none;
+        position: absolute;
+        content: " ";
+        height: 60px;
+        width: 30px;
+        right: 15px;
+        top: 0px;
+    }
+
+    input[type=submit] {
+        border: none;
+        display: block;
+        background-color: #3ca9e2;
+        color: #fff;
+        font-weight: bold;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 18px;
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    input[type=submit]:hover {
+        background-color: #329dd5;
+        transition: all 0.2s ease;
+    }
+
+    #create-account-wrap {
+        background-color: #eeedf1;
+        color: #8a8b8e;
+        font-size: 14px;
+        width: 100%;
+        padding: 10px 0;
+        border-radius: 0 0 4px 4px;
+    }
+
+    .disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .alert2msg {
+        border: 1px solid black;
+        background-color: #bdbdbe;
+    }
+
+
+    .s {
+        width: 4em;
+        font-size: inherit;
+        padding: 0.2em;
+        margin: 0.1em 0.2em;
+        -moz-box-sizing: content-box;
+        -webkit-box-sizing: content-box;
+        box-sizing: content-box;
+        display: inline-block;
+    }
+
+    .zoom_hilit {
+        transition: all 0.3s;
+    }
+
+    .zoom_hilit:hover {
+        transform: scale(1.05);
+        box-shadow: 8px 8px 23px #aeaeae, -8px -8px 23px #FFFFFF;
+    }
+
+    .okragly:hover,
+    .bubu:hover {
+        transform: scale(1.05);
+    }
+
+    .bubu {
+        transition: all 0.2s ease;
+    }
+
+    .stdPic {
+        border-radius: 20%;
+        height: 3em;
+    }
+
+    .prod_listing {
+        border-radius: 20px;
+        margin: 80px;
+        background: #ffffff;
+        /* box-shadow: 15px 14px 54px -4px rgba(0, 0, 0, 0.75), 15px 14px 54px -4px rgba(0, 0, 0, 0.75); */
+        box-shadow: -15px -14px 23px 2px rgba(255, 255, 255, 1), 15px 14px 23px -4px rgba(0, 0, 0, 1);
+        border-radius: 70px;
+        background: linear-gradient(145deg, #ffffff, #e1e1e1);
+        box-shadow: 18px 18px 43px #d5d5d5,
+            -18px -18px 43px #ffffff;
+    }
+
+
+    .nameCNT {
+        display: inline-flex;
+        flex-wrap: wrap;
+        width: min-content;
+        margin-left: 5;
+    }
+
+    /* ----- Variables ----- */
+    /* ----- Global ----- */
+    * {
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        height: 100%;
+    }
+
+    body {
+        display: grid;
+        grid-template-rows: 1fr;
+        font-family: "Raleway", sans-serif;
+        background-color: #ddd;
+    }
+
+    h3 {
+        font-size: 0.7em;
+        letter-spacing: 1.2px;
+        color: #a6a6a6;
+    }
+
+    img {
+        max-width: 100%;
+        filter: drop-shadow(1px 1px 3px #a6a6a6);
+    }
+
+    /* ----- Product Section ----- */
+    .product {
+        display: grid;
+        grid-template-columns: 0.9fr 1fr;
+        margin: auto;
+        padding: 2.5em 0;
+        min-width: 600px;
+        border-radius: 50px;
+        background: linear-gradient(145deg, #fcfcfc, #e6e6e6, #c1c1c1);
+        box-shadow: 18px 18px 33px #C0C0C0, -18px -18px 33px #ffffff;
+        margin: 80px;
+    }
+
+    .product_cards_list {
+        margin: 20vw;
+    }
+
+    /* ----- Photo Section ----- */
+    .product__photo {
+        position: relative;
+    }
+
+    .photo-container {
+        position: absolute;
+        left: -2.5em;
+        display: grid;
+        grid-template-rows: 1fr;
+        width: 100%;
+        height: 100%;
+        border-radius: 6px;
+        box-shadow: 4px 4px 25px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    .photo-main {
+        text-align: center;
+        border-radius: 6px 6px 0 0;
+        background-color: #9be010;
+        background: radial-gradient(#e5f89e, #96e001);
+    }
+
+    .photo-main .controls {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.8em;
+        color: #fff;
+    }
+
+    .photo-main .controls i {
+        cursor: pointer;
+    }
+
+    .photo-main img {
+        /* position: absolute; */
+        /* left: -3.5em; */
+        max-height: 80%;
+        height: 100%;
+        /* top: 2em; */
+        /* max-width: 110%; */
+        filter: saturate(150%) contrast(120%) hue-rotate(10deg) drop-shadow(1px 20px 10px rgba(0, 0, 0, 0.3));
+    }
+
+    .photo-album {
+        padding: 0.7em 1em;
+        border-radius: 0 0 6px 6px;
+        background-color: #fff;
+    }
+
+    .photo-album ul {
+        display: flex;
+        justify-content: space-around;
+        list-style: none;
+    }
+
+    .photo-album li {
+        float: left;
+        overflow: hidden;
+        width: 55px;
+        height: 55px;
+        border: 1px solid #a6a6a6;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    /* ----- Informations Section ----- */
+    .product__info {
+        padding: 0.8em 0.8em
+    }
+
+    .title h1 {
+        margin-bottom: 0.1em;
+        color: #4c4c4c;
+        font-size: 1.5em;
+        font-weight: 900;
+    }
+
+    .title span {
+        font-size: 0.7em;
+        color: #a6a6a6;
+    }
+
+    .price {
+        margin: 1.5em 0;
+        color: #ff3f40;
+        font-size: 1.2em;
+    }
+
+    .price span {
+        padding-left: 0.15em;
+        font-size: 2.9em;
+    }
+
+    .description {
+        clear: left;
+        margin: 2em 0;
+        padding-right: 20px;
+    }
+
+    .description h3 {
+        margin-bottom: 1em;
+    }
+
+    .description ul {
+        font-size: 0.8em;
+        list-style: disc;
+        margin-left: 1em;
+    }
+
+    .description li {
+        text-indent: -0.6em;
+        margin-bottom: 0.5em;
+    }
+
+    .buy--btn {
+        padding: 1.5em 3.1em;
+        border: none;
+        border-radius: 7px;
+        font-size: 0.8em;
+        font-weight: 700;
+        letter-spacing: 1.3px;
+        color: #fff;
+        background-color: #ff3f40;
+        box-shadow: 2px 2px 25px -7px #4c4c4c;
+        cursor: pointer;
+    }
+
+    .buy--btn:active {
+        transform: scale(0.97);
+    }
+
+    /* ----- Footer Section ----- */
+    footer {
+        padding: 1em;
+        text-align: center;
+        color: #fff;
+    }
+
+    footer a {
+        color: #4c4c4c;
+    }
+
+    footer a:hover {
+        color: #ff3f40;
+    }
+
+    li {
+        list-style: none;
+    }
+</style>
+</style>

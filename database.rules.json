@@ -1,0 +1,17 @@
+{
+  "rules": {
+    "admin": false,
+    "items": {
+      "$uid": {
+        ".read": true,
+        ".write": "root.child('admin') === auth.uid "
+      }
+    },
+    "orders": {
+      "$uid": {
+        ".read": "$uid === auth.uid || $uid === root.child('admin')",
+        ".write": "$uid === auth.uid || $uid === root.child('admin')"
+      }
+    }
+  }
+}

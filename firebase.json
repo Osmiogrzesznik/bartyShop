@@ -1,0 +1,18 @@
+{
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "hosting": {
+    "site:": "vue-student-groups",
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+  },
+  "emulators": {
+    "database": {
+      "port": "9000"
+    },
+    "hosting": {
+      "port": 5001
+    }
+  }
+}
